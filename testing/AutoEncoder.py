@@ -10,10 +10,10 @@ from sklearn.model_selection import train_test_split
 from keras.layers import Input, Dense
 from keras.models import Model
 
-print(os.listdir("input/"))
+print(os.listdir("../input/"))
 
-train = pd.read_csv('input/train.csv')
-test = pd.read_csv('input/test.csv')
+train = pd.read_csv('../input/train.csv')
+test = pd.read_csv('../input/test.csv')
 
 target = train['target']
 train_id = train['ID']

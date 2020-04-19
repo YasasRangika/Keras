@@ -1,6 +1,6 @@
 import pandas as pd
 
-df = pd.read_csv('5.162.125.116.csv')
+df = pd.read_csv('../5.162.125.116.csv')
 # df.sort('http_method').drop_duplicates(subset=['timestamp'], take_last=True)
 
 # grp = df.groupby(['timestamp'])

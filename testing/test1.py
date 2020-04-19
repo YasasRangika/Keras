@@ -2,10 +2,10 @@ import pandas as pd
 import datetime
 
 # making data frame from csv file
-df = pd.read_csv("5.162.125.116.csv", index_col=0, parse_dates=True)
+df = pd.read_csv("../5.162.125.116.csv", index_col=0, parse_dates=True)
 
 # read csv without indexing to get min and max timstamps
-tmp = pd.read_csv('5.162.125.116.csv')
+tmp = pd.read_csv('../5.162.125.116.csv')
 min_index = min(tmp['timestamp'])
 max_index = datetime.datetime.strptime(min_index, '%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=1)
 

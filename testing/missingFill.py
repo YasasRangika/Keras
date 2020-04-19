@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 
 # removing milliseconds from time stamp*******************
-opsd_daily = pd.read_csv('5.162.125.116.csv')
+opsd_daily = pd.read_csv('../5.162.125.116.csv')
 VAL = opsd_daily['timestamp']
 
 for i in range(len(opsd_daily)):
@@ -15,7 +15,7 @@ for i in range(len(opsd_daily)):
     opsd_daily.at[i, "timestamp"] = dt
     opsd_daily.to_csv('5.162.125.116.csv', index=False)
 
-df = pd.read_csv("5.162.125.116.csv")
+df = pd.read_csv("../5.162.125.116.csv")
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 # fill missing with NaN values by incrementing seconds one by one
 df = df.set_index('timestamp').reindex(pd.date_range(min(df['timestamp']), max(df['timestamp']), freq='S').fillna())

@@ -1,6 +1,6 @@
 import pandas as pd
 
-df = pd.read_csv('5.162.125.116.csv')
+df = pd.read_csv('../5.162.125.116.csv')
 
 # print(df.loc[df['timestamp'] == '2020-03-18 13:55:18', 'http_method'].iloc[0])
 

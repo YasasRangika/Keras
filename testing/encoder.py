@@ -5,7 +5,7 @@ import re
 import hashlib
 import pandas as pd
 
-df = pd.read_csv("trafficSet.csv")
+df = pd.read_csv("../trafficSet.csv")
 
 DIMENSION = 15
 TIME_STAMP = df['timestamp']

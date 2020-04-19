@@ -1,93 +1,117 @@
-import os
+from typing import Any, Union
 import pandas as pd
-import pytz
-from datetime import datetime
-from crc64iso.crc64iso import crc64
-import re
 import hashlib
+import numpy as np
 
 
-def encode():
-    for j in os.listdir('inputs/'):
-        # open all csv files in the given directory
-        if j.endswith('.csv'):
-            f_name = 'inputs/' + j
-            df = pd.read_csv(f_name)
+def ip_encode(ip):
+    val = "".join([bin(int(x) + 256)[3:] for x in ip.split('.')])
+    bin_val = int(val, 2)
+    return (bin_val - 0) / 4294967295
 
-            # assign values by headers to variables
-            DIMENSION = len(df)
-            TIME_STAMP = df['timestamp']
-            HTTP_METHOD = df['http_method']
-            INVOKE_PATH = df['invoke_path']
-            USER_AGENT = df['user_agent']
 
-            # mapping function for http_method
-            def method(argument):
-                switcher = {
-                    "GET": 1,
-                    "POST": 2,
-                    "DELETE": 3
-                }
-                return switcher.get(argument, 404)
+def encode(f_name):
+    df = pd.read_csv(f_name)
 
-            # going through single csv file
-            for i in range(DIMENSION):
-                # encode date and time to timestamp value
-                input_ = TIME_STAMP[i]
-                # slice_object = slice(26)
-                # time = input_[slice_object]
-                dt = datetime.strptime(input_, '%Y-%m-%d %H:%M:%S.%f')
-                ts = pytz.utc.localize(dt).timestamp()
-                interval_ = int(ts)
-                df.at[i, "timestamp"] = interval_
-                df.to_csv(f_name, index=False)
+    bool_http = pd.notnull(df['http_method'])
+    http_method = df[['http_method']][bool_http]
+    # selecting all not null values for invoke_path
+    bool_path = pd.notnull(df['invoke_path'])
+    invoke_path = df[['invoke_path']][bool_path]
+    # selecting all not null values for user_agent
+    bool_agent = pd.notnull(df['user_agent'])
+    user_agent = df[['user_agent']][bool_agent]
+    # selecting all not null values for response_code
+    bool_res_code = pd.notnull(df['response_code'])
+    response_code = df[['response_code']][bool_res_code]
 
-                # label encoding for http_method
-                df.at[i, "http_method"] = method(HTTP_METHOD[i])
-                df.to_csv(f_name, index=False)
+    ip = ip_encode(df['ip_address'][0])
 
-                # binary encode resource access path
-                md5 = hashlib.md5(INVOKE_PATH[i].encode('utf-8')).hexdigest()
-                res = ''.join(format(ord(i), 'b') for i in md5[:10])
-                df.at[i, "invoke_path"] = res
-                df.to_csv(f_name, index=False)
+    # mapping function for http_method
+    def method(argument):
+        switcher = {
+            "GET": 1,
+            "POST": 2,
+            "DELETE": 3,
+            "PUT": 4
+        }
+        return switcher.get(argument, 0)
 
-                # label encoding user agent
-                s = USER_AGENT[i]
-                splt = s.split("/", 1)
+    # label encoding for http_method
+    for row in http_method.iterrows():
+        val = method(row[1][0])
+        norm_value: Union[int, float] = (val - 0) / 4
+        df.at[row[0], "http_method"] = norm_value
+        df.to_csv(f_name, index=False)
 
-                if "Mozilla" in splt[0]:
-                    browser = "m"
-                elif "Opera" in splt[0]:
-                    browser = "o"
-                elif "Firefox" in splt[0]:
-                    browser = "f"
-                else:
-                    print("Error with browser categorization!")
+    # response code normalization
+    for row in response_code.iterrows():
+        # response codes -> 200,201,400,401,403,404,405,409,500,503
+        norm_code = (row[1][0] - 0) / 303
+        df.at[row[0], "response_code"] = norm_code
+        df.to_csv(f_name, index=False)
 
-                if "Windows" in splt[1]:
-                    plat_form = "w"
-                elif "Linux" in splt[1]:
-                    plat_form = "l"
-                else:
-                    print("Error with platform categorization!")
+    # binary encode resource access path
+    for row in invoke_path.iterrows():
+        md5 = hashlib.md5(row[1][0].encode('utf-8')).hexdigest()
+        res = ''.join(format(ord(i), 'b') for i in md5[:10])
+        res = res[0:60]
+        bin_val = int(res, 2)
+        # MinMax normalization applied -> min value = 0 & max value = 1152921504606846975( =
+        # '111111111111111111111111111111111111111111111111111111111111')
+        norm_val = (bin_val - 0) / 1152921504606846975
+        df.at[row[0], "invoke_path"] = norm_val
+        df.to_csv(f_name, index=False)
 
-                status = browser + plat_form
+    # label encoding user agent
+    for row in user_agent.iterrows():
+        s = row[1][0]
+        splt = s.split("/", 1)
 
-                if "mw" in status:
-                    out = 1
-                elif "ml" in status:
-                    out = 2
-                elif "ow" in status:
-                    out = 3
-                elif "ol" in status:
-                    out = 4
-                elif "fw" in status:
-                    out = 5
-                elif "fl" in status:
-                    out = 6
-                else:
-                    print("Error with final label encoding!")
+        if "Mozilla" in splt[0]:
+            browser = "m"
+        elif "Opera" in splt[0]:
+            browser = "o"
+        elif "Firefox" in splt[0]:
+            browser = "f"
+        else:
+            browser = None
+            print("Error with browser categorization!")
 
-                df.at[i, "user_agent"] = out
-                df.to_csv(f_name, index=False)
+        if "Windows" in splt[1]:
+            plat_form = "w"
+        elif "Linux" in splt[1]:
+            plat_form = "l"
+        else:
+            plat_form = None
+            print("Error with platform categorization!")
+
+        status = browser + plat_form
+
+        if "mw" in status:
+            out = 1
+        elif "ml" in status:
+            out = 2
+        elif "ow" in status:
+            out = 3
+        elif "ol" in status:
+            out = 4
+        elif "fw" in status:
+            out = 5
+        elif "fl" in status:
+            out = 6
+        else:
+            out = 0
+            print("Error with final label encoding!")
+
+        norm_out = (out - 0) / 6
+        df.at[row[0], "user_agent"] = norm_out
+        df.to_csv(f_name, index=False)
+
+    # df.iloc[:, 0] = df.iloc[:, 0].replace(to_replace=np.nan, value=ip)
+    df.iloc[:, 1] = df.iloc[:, 1].replace(to_replace=[np.nan, df['ip_address'][0]], value=ip)
+    # replace all NaN values with zero
+    df = df.replace(np.nan, 0)
+    # remove other columns
+    keep_cols = ["ip_address", "http_method", "invoke_path", "user_agent", "response_code"]
+    df.to_csv(f_name, columns=keep_cols, index=False)

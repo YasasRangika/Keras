@@ -6,7 +6,7 @@ import datetime
 # min_index = min(tmp['timestamp'])
 # max_index = datetime.datetime.strptime(min_index, '%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=1)
 
-df = pd.read_csv('5.162.125.116.csv', index_col=0, parse_dates=True)
+df = pd.read_csv('../5.162.125.116.csv', index_col=0, parse_dates=True)
 
 # times_sample = pd.to_datetime(min_index, max_index)
 # Select the specified dates and just the Consumption column
