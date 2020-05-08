@@ -42,12 +42,12 @@ for j in range(SIZE):
 df.to_csv("x_dataset.csv", index=False)
 a3d = np.array(list(df.groupby(IP_ADDRESS, sort=False).apply(pd.DataFrame.as_matrix)))
 
-# np.savetxt('y_dataset.txt', arr)
-with open('n_folded/x_train_1.csv', 'w') as outfile:
+np.savetxt('y_dataset.txt', arr)
+with open('x_dataset.txt', 'w') as outfile:
     for data_slice in a3d:
         np.savetxt(outfile, data_slice, fmt='%-20.18f')
 
-# new_data = np.loadtxt('n_folded/x_train_1.csv')
+# new_data = np.loadtxt('x_dataset.txt')
 # x_train = new_data.reshape((SIZE, 3600, 6))
 # print(x_train)
 # print(x_train.shape)
