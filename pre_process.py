@@ -69,8 +69,8 @@ for filename in all_files:
         df = pd.DataFrame(frame)
         # IP, token and other non changing columns removed[Selected timestamp - 1hr](After
         # 1hr token may be a different one if not time extended)
-        header = ["timestamp", "ip_address", "http_method", "invoke_path", "user_agent", "response_code"]
-        df.to_csv('inputs/%s.csv' % frame.iloc[0]['ip_address'], columns=header, index=False)
+        header = ["timestamp", "ip_address", "access_token", "http_method", "invoke_path", "user_agent", "response_code"]
+        df.to_csv(to_dir+'%s.csv' % frame.iloc[0]['ip_address'], columns=header, index=False)
         count = count + 1
 print("Unique ip count :", count)
 

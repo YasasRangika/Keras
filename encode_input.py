@@ -2,6 +2,7 @@ from typing import Any, Union
 import pandas as pd
 import hashlib
 import numpy as np
+import uuid
 
 
 def ip_encode(ip):
@@ -15,6 +16,9 @@ def encode(f_name):
 
     bool_http = pd.notnull(df['http_method'])
     http_method = df[['http_method']][bool_http]
+    # selecting all not null values for access_token
+    bool_token = pd.notnull(df['access_token'])
+    access_token = df[['access_token']][bool_token]
     # selecting all not null values for invoke_path
     bool_path = pd.notnull(df['invoke_path'])
     invoke_path = df[['invoke_path']][bool_path]
@@ -44,6 +48,15 @@ def encode(f_name):
         df.at[row[0], "http_method"] = norm_value
         df.to_csv(f_name, index=False)
 
+    # binary encode access token uuid
+    for row in access_token.iterrows():
+        int_val = uuid.UUID(row[1][0]).int
+        # MinMax normalization applied -> min value = 0 & max value = 340282366920938463463374607431768211455( =
+        # 'ffffffff-ffff-ffff-ffff-ffffffffffff')
+        norm_val = int_val / 340282366920938463463374607431768211455
+        df.at[row[0], "access_token"] = norm_val
+        df.to_csv(f_name, index=False)
+
     # response code normalization
     for row in response_code.iterrows():
         # response codes -> 200,201,400,401,403,404,405,409,500,503
@@ -51,7 +64,7 @@ def encode(f_name):
         df.at[row[0], "response_code"] = norm_code
         df.to_csv(f_name, index=False)
 
-    # binary encode resource access path
+    # binary encode resource access path for normal user pattern dataset
     for row in invoke_path.iterrows():
         md5 = hashlib.md5(row[1][0].encode('utf-8')).hexdigest()
         res = ''.join(format(ord(i), 'b') for i in md5[:10])
@@ -62,6 +75,19 @@ def encode(f_name):
         norm_val = (bin_val - 0) / 1152921504606846975
         df.at[row[0], "invoke_path"] = norm_val
         df.to_csv(f_name, index=False)
+
+    # # binary encode resource access path for abnormal token usage dataset and extreme delete attack dataset
+    # for row in invoke_path.iterrows():
+    #     val = row[1][0].replace("https://172.17.0.1:8243/", "")
+    #     md5 = hashlib.md5(val.encode('utf-8')).hexdigest()
+    #     res = ''.join(format(ord(i), 'b') for i in md5[:10])
+    #     res = res[0:60]
+    #     bin_val = int(res, 2)
+    #     # MinMax normalization applied -> min value = 0 & max value = 1152921504606846975( =
+    #     # '111111111111111111111111111111111111111111111111111111111111')
+    #     norm_val = (bin_val - 0) / 1152921504606846975
+    #     df.at[row[0], "invoke_path"] = norm_val
+    #     df.to_csv(f_name, index=False)
 
     # label encoding user agent
     for row in user_agent.iterrows():
@@ -113,5 +139,5 @@ def encode(f_name):
     # replace all NaN values with zero
     df = df.replace(np.nan, 0)
     # remove other columns
-    keep_cols = ["ip_address", "http_method", "invoke_path", "user_agent", "response_code"]
+    keep_cols = ["ip_address", "access_token", "http_method", "invoke_path", "user_agent", "response_code"]
     df.to_csv(f_name, columns=keep_cols, index=False)

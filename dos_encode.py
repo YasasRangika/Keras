@@ -2,17 +2,21 @@ from typing import Any, Union
 import pandas as pd
 import hashlib
 import numpy as np
+import uuid
 
 # HTTP_METHOD = 'http_method'
 # INVOKE_PATH = 'invoke_path'
 # USER_AGENT = 'user_agent'
 # RESPONSE_CODE = 'response_code'
 # IP_ADDRESS = 'ip_address'
+# ACCESS_TOKEN = 'access_token'
+
 HTTP_METHOD = 'Method'
 INVOKE_PATH = 'URL'
 USER_AGENT = 'User-agent'
 RESPONSE_CODE = 'Response Code'
 IP_ADDRESS = 'client-ip'
+ACCESS_TOKEN = 'Authorization'
 
 
 def ip_encode(ip):
@@ -35,6 +39,9 @@ def encode(f_name):
     # selecting all not null values for response_code
     bool_res_code = pd.notnull(df[RESPONSE_CODE])
     response_code = df[[RESPONSE_CODE]][bool_res_code]
+    # selecting all not null values for access_token
+    bool_token = pd.notnull(df[ACCESS_TOKEN])
+    access_token = df[[ACCESS_TOKEN]][bool_token]
 
     ip = ip_encode(df[IP_ADDRESS][0])
 
@@ -73,6 +80,15 @@ def encode(f_name):
         # '111111111111111111111111111111111111111111111111111111111111')
         norm_val = (bin_val - 0) / 1152921504606846975
         df.at[row[0], INVOKE_PATH] = norm_val
+        df.to_csv(f_name, index=False)
+
+    # binary encode access token uuid
+    for row in access_token.iterrows():
+        int_val = uuid.UUID(row[1][0].replace('Bearer', '').replace(' ', '')).int
+        # MinMax normalization applied -> min value = 0 & max value = 340282366920938463463374607431768211455( =
+        # 'ffffffff-ffff-ffff-ffff-ffffffffffff')
+        norm_val = int_val / 340282366920938463463374607431768211455
+        df.at[row[0], ACCESS_TOKEN] = norm_val
         df.to_csv(f_name, index=False)
 
     # label encoding user agent
@@ -125,7 +141,8 @@ def encode(f_name):
     # replace all NaN values with zero
     df = df.replace(np.nan, 0)
     # remove other columns
-    keep_cols = [IP_ADDRESS, HTTP_METHOD, INVOKE_PATH, USER_AGENT, RESPONSE_CODE]
+    keep_cols = [IP_ADDRESS, ACCESS_TOKEN, HTTP_METHOD, INVOKE_PATH, USER_AGENT, RESPONSE_CODE]
     df.to_csv(f_name, columns=keep_cols, index=False)
-    df.columns = ['ip_address', 'http_method', 'invoke_path', 'user_agent', 'response_code']
-    df.to_csv(f_name, index=False)
+    df1 = pd.read_csv(f_name)
+    df1.columns = ['ip_address', 'access_token', 'http_method', 'invoke_path', 'user_agent', 'response_code']
+    df1.to_csv(f_name, index=False)

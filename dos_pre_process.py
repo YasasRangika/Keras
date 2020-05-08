@@ -11,12 +11,15 @@ from dos_encode import encode
 # USER_AGENT = 'user_agent'
 # RESPONSE_CODE = 'response_code'
 # IP_ADDRESS = 'ip_address'
+# ACCESS_TOKEN = 'access_token'
+
 TIME_STAMP = 'TimeStamp'
 HTTP_METHOD = 'Method'
 INVOKE_PATH = 'URL'
 USER_AGENT = 'User-agent'
 RESPONSE_CODE = 'Response Code'
 IP_ADDRESS = 'client-ip'
+ACCESS_TOKEN = 'Authorization'
 
 to_dir = 'inputs/'
 all_files = 'DDOS.csv'
@@ -48,6 +51,8 @@ def rm_millisec(f_path):
         # dt = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
         opsd_daily.at[i, TIME_STAMP] = datetime.datetime.strptime(VAL[i], '%Y-%m-%d %H:%M:%S.%f').replace(microsecond=0)
         opsd_daily.to_csv(f_path, index=False)
+
+
 # datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f').replace(microsecond=0)
 
 def rm_duplicates(f_path):
@@ -82,19 +87,19 @@ name = df[IP_ADDRESS]
 #     df = pd.DataFrame(frame)
 #     # IP, token and other non changing columns removed[Selected timestamp - 1hr](After
 #     # 1hr token may be a different one if not time extended)
-#     header = [TIME_STAMP, IP_ADDRESS, HTTP_METHOD, INVOKE_PATH, USER_AGENT, RESPONSE_CODE]
+#     header = [TIME_STAMP, IP_ADDRESS, ACCESS_TOKEN, HTTP_METHOD, INVOKE_PATH, USER_AGENT, RESPONSE_CODE]
 #     df.to_csv('inputs/%s.csv' % frame.iloc[0][IP_ADDRESS], columns=header, index=False)
 #     count = count + 1
 # print("Unique ip count :", count)
-#
-# for j in os.listdir(to_dir):
-#     # open all csv files in the given directory
-#     if j.endswith('.csv'):
-#         f_path = to_dir + j
-#         rm_millisec(f_path)
-#         rm_duplicates(f_path)
-#         setIndex(f_path)
-#         encode(f_path)
+
+for j in os.listdir(to_dir):
+    # open all csv files in the given directory
+    if j.endswith('.csv'):
+        f_path = to_dir + j
+        rm_millisec(f_path)
+        rm_duplicates(f_path)
+        setIndex(f_path)
+        encode(f_path)
 
 # use thin clean method later
 # clean_dir(to_dir)
